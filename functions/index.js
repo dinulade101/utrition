@@ -3,8 +3,28 @@ const app = require('express')();
 
 app.use(require('cors')({origin: true}));
 
-app.get('/', (req, res) => {
-    res.send('hello world!');
+// google cloud client libraries
+const language = require('@google-cloud/language');
+const client = new language.LanguageServiceClient();
+
+app.get('/ping', (req, res) => {
+    client.analyzeEntitySentiment({
+        document: {
+            content: 'hello world!',
+            type: 'PLAIN_TEXT'
+        }
+    }).then(results => {
+        res.send({
+            pong: results[0].documentSentiment
+        });
+        return;
+    }).catch(err => {
+        if (err) {
+            res.send({
+                pong: err
+            });
+        }
+    });
 });
 
 // // Create and Deploy Your First Cloud Functions
