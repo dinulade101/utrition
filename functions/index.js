@@ -15,7 +15,7 @@ app.get('/ping', (req, res) => {
         }
     }).then(results => {
         res.send({
-            pong: results[0].documentSentiment
+            pong: results
         });
         return;
     }).catch(err => {
