@@ -8,7 +8,7 @@ const language = require('@google-cloud/language');
 const client = new language.LanguageServiceClient();
 
 app.get('/ping', (req, res) => {
-    client.analyzeEntitySentiment({
+    client.analyzeSentiment({
         document: {
             content: 'hello world!',
             type: 'PLAIN_TEXT'
