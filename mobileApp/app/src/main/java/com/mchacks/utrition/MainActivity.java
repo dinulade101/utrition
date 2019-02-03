@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -38,6 +39,7 @@ import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -210,12 +212,41 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public Bitmap getRotatedBitmap(Bitmap bitmap) throws IOException {
+        ExifInterface ei = new ExifInterface(mCurrentPhotoPath);
+        int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+
+        Bitmap rotatedBitmap = null;
+        switch(orientation){
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                rotatedBitmap = rotateImage(bitmap, 90);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                rotatedBitmap = rotateImage(bitmap, 180);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                rotatedBitmap = rotateImage(bitmap, 270);
+                break;
+            case ExifInterface.ORIENTATION_NORMAL:
+            default:
+                rotatedBitmap = bitmap;
+        }
+        return rotatedBitmap;
+    }
+
+    public Bitmap rotateImage(Bitmap source, float angle){
+        Matrix matrix = new Matrix();
+        matrix.postRotate(angle);
+        return Bitmap.createBitmap(source, 0,0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
     private void processTextRecognitionResult(FirebaseVisionText texts){
         List<FirebaseVisionText.TextBlock> blocks = texts.getTextBlocks();
         if (blocks.size() == 0){
             Log.e("myApp", "block size = 0");
             return;
         }
+        List<String> output = new ArrayList<String>();
         for (int i=0; i< blocks.size(); i++){
             List<FirebaseVisionText.Line> lines = blocks.get(i).getLines();
             for (int j =0; j < lines.size(); j++){
@@ -224,8 +255,10 @@ public class MainActivity extends AppCompatActivity {
 //
 //                }
                 String elem = lines.get(j).getText();
-                Log.d("MyApp", elem);
+                output.add(elem);
             }
         }
+
+        //make REST API call
     }
 }
