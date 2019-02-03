@@ -17,6 +17,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Html;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.util.SparseArray;
@@ -25,6 +26,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -82,19 +84,23 @@ public class MainActivity extends AppCompatActivity {
     private OkHttpClient okHttpClient = null;
     String inputString;
     String resultText = "";
+    ProgressBar progressBar;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        //System.setProperty("http.keepAlive", "false");
 
         Button btnCamera = (Button)findViewById(R.id.btnCamera);
         imageView = (ImageView)findViewById(R.id.imageView);
         textView = (TextView)findViewById(R.id.text_view_large);
         textViewBottom = (TextView)findViewById(R.id.text_view_large);
         textViewBottom.setMovementMethod(new ScrollingMovementMethod());
+        progressBar = (ProgressBar)findViewById(R.id.progressBar1);
+        progressBar.setVisibility(View.GONE);
+
 
         imageView.setImageResource(R.drawable.logo);
 
@@ -131,6 +137,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void parseJSON(String jsonString) throws JSONException {
+        resultText = "";
         JSONObject object = new JSONObject(jsonString.toString());
         JSONArray array = object.getJSONArray("ingredients");
         printJSON(array);
@@ -156,10 +163,43 @@ public class MainActivity extends AppCompatActivity {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+        String url = "";
+        try {
+            url = obj.getString("url");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        JSONObject sentiment;
+        String score = "";
+        try {
+            sentiment = obj.getJSONObject("sentiment");
+            score = sentiment.getString("score");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         Log.d("myApp", name);
         Log.d("myApp", description);
 
-        resultText = resultText + "Name: " + name + "\n" + "Description: " + description + "\n";
+        // analyze score
+        float scoreF = Float.parseFloat(score);
+
+        resultText = resultText
+                + "<b>Name:</b> "
+                + name + "<br>"
+                + "<b>Description:</b> "
+                + description
+                + "<br>"
+                + url
+                + "<br>"
+                + score
+                + "<br>";
+
+        if (scoreF < -0.5){
+            resultText += "<span style='color:#FF88CF'><b>Could have health impacts</b><br></span>";
+        }
+
+        resultText +=
+                 "----------------------<br>";
     }
 
     @Override
@@ -335,20 +375,44 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 try {
+                    runOnUiThread(new Runnable(){
+                        @Override
+                        public void run(){
+                            progressBar.setVisibility(View.VISIBLE);
+                        }
+                    });
                     parseJSON(HttpPost("https://us-central1-utrition.cloudfunctions.net/api/preproc"));
                     runOnUiThread(new Runnable(){
                         @Override
                         public void run(){
-                            textViewBottom.setText(resultText);
+                            textViewBottom.setText(Html.fromHtml(resultText));
+                            progressBar.setVisibility(View.GONE);
                         }
                     });
-                } catch (IOException e) {
+              }
+                catch (IOException e) {
                     e.printStackTrace();
-                } catch (JSONException e) {
+                    runOnUiThread(new Runnable(){
+                        @Override
+                        public void run(){
+                            textViewBottom.setText(Html.fromHtml("Please try scanning again."));
+                            progressBar.setVisibility(View.GONE);
+                        }
+                    });
+                } catch (Exception e) {
+                    runOnUiThread(new Runnable(){
+                        @Override
+                        public void run(){
+                            textViewBottom.setText(Html.fromHtml("Please try scanning again."));
+                            progressBar.setVisibility(View.GONE);
+                        }
+                    });
                     e.printStackTrace();
                 }
             }
         });
+
+
 
         thread.start();
 
@@ -357,11 +421,13 @@ public class MainActivity extends AppCompatActivity {
 
     private String HttpPost(String myUrl) throws IOException, JSONException {
         String result = "";
+        HttpURLConnection conn;
+        StringBuffer response;
 
         URL url = new URL(myUrl);
 
         // 1. create HttpURLConnection
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
 
@@ -374,15 +440,18 @@ public class MainActivity extends AppCompatActivity {
         // 4. make POST request to the given URL
         conn.connect();
 
+
         InputStream in = new BufferedInputStream(conn.getInputStream());
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         String inputLine;
-        StringBuffer response = new StringBuffer();
+        response = new StringBuffer();
 
-        while ((inputLine = reader.readLine()) != null){
+        while ((inputLine = reader.readLine()) != null) {
             response.append(inputLine);
         }
-        in.close();
+
+        conn.disconnect();
+
 
 
 
