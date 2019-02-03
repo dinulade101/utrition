@@ -16,7 +16,20 @@ function score (summary) {
 }
 
 module.exports = function (ingredients) {
-    return Promise.all(ingredients.map(crawl)).then(res => {
-        return score(res.join());
+    descriptions =  Promise.all(ingredients.map(crawl))
+    scores = descriptions.then(desc => {
+        return score(desc.join());
+    });
+    return Promise.all([descriptions, scores]).then(([desc, scores]) => {
+        return {
+            ingredients: ingredients.map((ingredient, i) => {
+                return {
+                    name: ingredient,
+                    description: desc[i],
+                    sentiment: scores[0].sentences[i].sentiment
+                };
+            }),
+            sentiment: scores[0].documentSentiment
+        };
     });
 }

@@ -13,7 +13,7 @@ app.get('/ping', (req, response) => {
             console.log('ERROR', err);
             response.send(err);
         }
-    })
+    });
 });
 
 // // Create and Deploy Your First Cloud Functions
