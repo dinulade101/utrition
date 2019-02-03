@@ -5,7 +5,7 @@ app.use(require('cors')({origin: true}));
 const analyser = require('./analyser');
 
 
-const re_ingredient_list = /INGREDIENTS\s*:((?:[\s\w-()]*,)*(?:[\s\w-()]*\.))/i;
+const re_ingredient_list = /(?:(?:INGREDIENTS)|(?:INGREDIEN))\s*:((?:[\s\w-()]*,)*(?:[\s\w-()]*\.))/i;
 const re_list = /\s*(\w[\s\w-]*\w)(?:\s*\([\s\w-]*\))*[,.]/ig;
 
 app.post('/preproc', (req, response, next) => {
