@@ -26,4 +26,17 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    compile 'com.google.android.gms:play-services-vision:11.8.0'
+
+    // Firebase and ML Kit dependencies
+    implementation 'com.google.firebase:firebase-core:16.0.6'
+    implementation 'com.google.firebase:firebase-ml-vision:18.0.2'
+
+    // Permission handling library
+    implementation 'com.karumi:dexter:4.2.0'
+
+    // Image loading library
+    implementation 'com.github.bumptech.glide:glide:3.7.0'
 }
+
+apply plugin: 'com.google.gms.google-services'
