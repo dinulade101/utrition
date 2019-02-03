@@ -1,10 +1,13 @@
 package com.mchacks.utrition;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -42,7 +45,9 @@ public class MainActivity extends AppCompatActivity {
 
     ImageView imageView;
     TextView textView;
-    Uri imageUri;
+    File file;
+    Uri fileUri;
+    final int RC_TAKE_PHOTO = 1;
     String mCurrentPhotoPath;
 
     @Override
@@ -70,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view){
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
                 if (intent.resolveActivity(getPackageManager()) != null){
                     File photoFile = null;
                     try {
@@ -78,8 +84,11 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                     if (photoFile != null){
-                        Uri photoUri = FileProvider.getUriForFile(getApplicationContext(), "com.mchacks.utrition.fileprovider", photoFile);
+                        //Uri photoUri = FileProvider.getUriForFile(getApplicationContext(), "com.mchacks.utrition.fileprovider", photoFile);
+                        Uri photoUri = Uri.fromFile(photoFile);
                         intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+                        StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+                        StrictMode.setVmPolicy(builder.build());
                         startActivityForResult(intent, REQUEST_TAKE_PHOTO);
                     }
                 }
@@ -91,24 +100,41 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data){
         super.onActivityResult(requestCode, resultCode, data);
         try {
-            switch (requestCode) {
-                case 0: {
-                    if (resultCode == RESULT_OK) {
-                        Log.d("myApp", "called");
-                        File file = new File(mCurrentPhotoPath);
-                        Bitmap bitmap = MediaStore.Images.Media.getBitmap(getApplicationContext().getContentResolver(), Uri.fromFile(file));
-                        if (bitmap != null) {
-                            getTextFromBitmap(bitmap);
-                        }
-                    }
-                    break;
-                }
+            Log.d("myApp", "called");
+            File file = new File(mCurrentPhotoPath);
+            Bitmap bitmap = MediaStore.Images.Media.getBitmap(getApplicationContext().getContentResolver(), Uri.fromFile(file));
+            if (bitmap != null) {
+                  bitmap = getRotatedBitmap(bitmap);
+//                if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT){
+//                    Matrix matrix = new Matrix();
+//                    matrix.postRotate(90);
+//                    bitmap = Bitmap.createBitmap(bitmap, 0,0,bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+//                }
+                getTextFromBitmap(bitmap);
+                imageView.setImageBitmap(bitmap);
             }
         } catch (Exception error){
             error.printStackTrace();
         }
 
     }
+
+//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+//        if (resultCode == RESULT_OK) {
+//            Bitmap photo = (Bitmap) data.getExtras().get("data");
+//            getTextFromBitmap(photo);
+//
+//            // CALL THIS METHOD TO GET THE URI FROM THE BITMAP
+//            //Uri tempUri = getImageUri(getApplicationContext(), photo);
+//
+//            // CALL THIS METHOD TO GET THE ACTUAL PATH
+//            //File finalFile = new File(getRealPathFromURI(tempUri));
+//
+//            System.out.println(mCurrentPhotoPath);
+//        }
+//    }
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -135,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
     private File createImageFile() throws IOException {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String imageFileNmae = "JPEG_" + timeStamp + "_";
-        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File storageDir = getExternalCacheDir();
         File image = File.createTempFile(imageFileNmae, ".jpg", storageDir);
 
         mCurrentPhotoPath = image.getAbsolutePath();
