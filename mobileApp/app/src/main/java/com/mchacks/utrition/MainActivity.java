@@ -17,6 +17,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
@@ -37,6 +38,7 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.text.FirebaseVisionText;
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -71,12 +73,15 @@ public class MainActivity extends AppCompatActivity {
 
     ImageView imageView;
     TextView textView;
+    TextView textViewBottom;
     File file;
     Uri fileUri;
     final int RC_TAKE_PHOTO = 1;
     String mCurrentPhotoPath;
     private final String USER_AGENT = "Mozilla/5.0";
     private OkHttpClient okHttpClient = null;
+    String inputString;
+    String resultText = "";
 
 
     @Override
@@ -97,28 +102,15 @@ public class MainActivity extends AppCompatActivity {
 
         Button btnCamera = (Button)findViewById(R.id.btnCamera);
         imageView = (ImageView)findViewById(R.id.imageView);
-        textView = (TextView)findViewById(R.id.textView);
+        textView = (TextView)findViewById(R.id.text_view_large);
+        textViewBottom = (TextView)findViewById(R.id.text_view_large);
+        textViewBottom.setMovementMethod(new ScrollingMovementMethod());
 
         if(okHttpClient == null)
         {
             okHttpClient = new OkHttpClient();
         }
         //startActivity(new Intent(MainActivity.this, Pop.class));
-
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Log.d("myApp", HttpPost("https://us-central1-utrition.cloudfunctions.net/api/preproc"));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        thread.start();
 
         final int REQUEST_TAKE_PHOTO = 1;
         btnCamera.setOnClickListener(new View.OnClickListener() {
@@ -144,6 +136,38 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    public void parseJSON(String jsonString) throws JSONException {
+        JSONObject object = new JSONObject(jsonString.toString());
+        JSONArray array = object.getJSONArray("ingredients");
+        printJSON(array);
+    }
+
+    public void printJSON(JSONArray array) throws JSONException {
+        for (int i = 0; i< array.length(); i++){
+            JSONObject obj = array.getJSONObject(i);
+            printDetailsFromJSONObj(obj);
+        }
+    }
+
+    public void printDetailsFromJSONObj(JSONObject obj) {
+        String name = "";
+        try {
+            name = obj.getString("name");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        String description = "";
+        try {
+            description = obj.getString("description");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        Log.d("myApp", name);
+        Log.d("myApp", description);
+
+        resultText = resultText + "Name: " + name + "\n" + "Description: " + description + "\n";
     }
 
     @Override
@@ -311,13 +335,15 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("myApp", elem);
             }
         }
+        inputString = output.toString();
+        Log.d("myApp",inputString);
 
         //make REST API call
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    sendData(null);
+                    parseJSON(HttpPost("https://us-central1-utrition.cloudfunctions.net/api/preproc"));
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (JSONException e) {
@@ -326,99 +352,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-    }
+        thread.start();
 
-    public void sendData(List<String> data) throws IOException, JSONException {
-//        String url = "https://us-central1-utrition.cloudfunctions.net/api/preproc";
-//        URL obj = new URL(url);
-//        HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
-//
-//        con.setRequestMethod("POST");
-//        con.setRequestProperty("Accept-Language", "en-US, en;q=0.5");
-//        con.setRequestProperty("Content-Type", "application/json");
-//
-//        String json = "['Ingredients: Sugar']";
-//
-//        con.setDoOutput(true);
-//
-//        DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-//        wr.writeBytes(json.toString());
-//        wr.flush();
-//        wr.close();
-//
-//        int responseCode = con.getResponseCode();
-//        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-//        String inputLine;
-//        StringBuffer response = new StringBuffer();
-//
-//        while ((inputLine = in.readLine()) != null){
-//            response.append(inputLine);
-//        }
-//        in.close();
-//
-//        Log.d("myApp", response.toString());
-//        //HttpClient httpClient = new DefaultHttpClient();
-
-//        URL url = new URL("https://postman-echo.com/get?foo1=bar1&foo2=bar2");
-//        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-//        conn.setRequestMethod("GET");
-//        conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
-//        conn.setRequestProperty("Accept","application/json");
-//        conn.setDoOutput(true);
-//        conn.setDoInput(true);
-//
-//        Log.i("JSON", "");
-//        OutputStream os = conn.getOutputStream();
-//        //os.writeBytes(URLEncoder.encode(jsonParam.toString(), "UTF-8"));
-//        os.write("['INGREDIENTS: TORULA YEAST, CITRIC ACID,', 'LACTIC ACID, WHEAT STARCH. INGREDIENTS']".getBytes("UTF-8"));
-//
-//        //os.flush();
-//        os.close();
-//
-//        Log.i("STATUS", String.valueOf(conn.getResponseCode()));
-//        Log.i("MSG" , conn.getResponseMessage());
-//
-//        conn.disconnect();
-//    } catch (Exception e) {
-//        e.printStackTrace();
-//    }
-//
-//        Thread okHttpExecuteThread = new Thread() {
-//            @Override
-//            public void run() {
-//
-//                String url = "https://us-central1-utrition.cloudfunctions.net/api/preproc";
-//
-//                try {
-//
-//                    // Create okhttp3.Call object with post http request method.
-//                    Call call = createHttpPostMethodCall(url);
-//
-//                    // Execute the request and get the response synchronously.
-//                    Response response = call.execute();
-//
-//                    // If request process success.
-//                    boolean respSuccess = response.isSuccessful();
-//                    if (respSuccess) {
-//
-//                        // Parse and get server response text data.
-//                        String respData = parseResponseText(response);
-//
-//                        // Notify activity main thread to update UI display text with Handler.
-//                        sendChildThreadMessageToMainThread(respData);
-//                    } else {
-//                        sendChildThreadMessageToMainThread("Ok http post request failed.");
-//                    }
-//                } catch(Exception ex)
-//                {
-//                    Log.e(TAG_OK_HTTP_ACTIVITY, ex.getMessage(), ex);
-//                    sendChildThreadMessageToMainThread(ex.getMessage());
-//                }
-//            }
-//        };
-//
-//        // Start the child thread.
-//        okHttpExecuteThread.start();
+        textViewBottom.setText(resultText);
 
     }
 
@@ -497,7 +433,8 @@ public class MainActivity extends AppCompatActivity {
 
         OutputStream os = conn.getOutputStream();
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-        writer.write("[\"INGREDIENTS: TORULA YEAST, CITRIC ACID,\", \"LACTIC ACID, WHEAT STARCH. INGREDIENTS\"]");
+        //writer.write("[\"INGREDIENTS: TORULA YEAST, CITRIC ACID,\", \"LACTIC ACID, WHEAT STARCH. INGREDIENTS\"]");
+        writer.write("[\""+inputString+"\"]");
         Log.i(MainActivity.class.toString(), jsonObject.toString());
         writer.flush();
         writer.close();
