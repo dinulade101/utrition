@@ -1,5 +1,6 @@
 package com.mchacks.utrition;
 
+import android.app.Service;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -36,12 +37,23 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.text.FirebaseVisionText;
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import javax.net.ssl.HttpsURLConnection;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -51,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     Uri fileUri;
     final int RC_TAKE_PHOTO = 1;
     String mCurrentPhotoPath;
+    private final String USER_AGENT = "Mozilla/5.0";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +84,21 @@ public class MainActivity extends AppCompatActivity {
         Button btnCamera = (Button)findViewById(R.id.btnCamera);
         imageView = (ImageView)findViewById(R.id.imageView);
         textView = (TextView)findViewById(R.id.textView);
+
+//        Thread thread = new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    sendData(null);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                } catch (JSONException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        });
+//
+//        thread.start();
 
         final int REQUEST_TAKE_PHOTO = 1;
         btnCamera.setOnClickListener(new View.OnClickListener() {
@@ -197,7 +225,11 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onSuccess(FirebaseVisionText firebaseVisionText) {
                                 Log.e("myApp","success initial");
-                                processTextRecognitionResult(firebaseVisionText);
+                                try {
+                                    processTextRecognitionResult(firebaseVisionText);
+                                } catch (MalformedURLException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         })
                 .addOnFailureListener(
@@ -240,7 +272,7 @@ public class MainActivity extends AppCompatActivity {
         return Bitmap.createBitmap(source, 0,0, source.getWidth(), source.getHeight(), matrix, true);
     }
 
-    private void processTextRecognitionResult(FirebaseVisionText texts){
+    private void processTextRecognitionResult(FirebaseVisionText texts) throws MalformedURLException {
         List<FirebaseVisionText.TextBlock> blocks = texts.getTextBlocks();
         if (blocks.size() == 0){
             Log.e("myApp", "block size = 0");
@@ -256,9 +288,56 @@ public class MainActivity extends AppCompatActivity {
 //                }
                 String elem = lines.get(j).getText();
                 output.add(elem);
+                Log.d("myApp", elem);
             }
         }
 
         //make REST API call
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    sendData(null);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+    }
+
+    public void sendData(List<String> data) throws IOException, JSONException {
+        String url = "https://us-central1-utrition.cloudfunctions.net/api/analyse";
+        URL obj = new URL(url);
+        HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
+
+        con.setRequestMethod("POST");
+        con.setRequestProperty("User-Agent", USER_AGENT);
+        con.setRequestProperty("Accept-Language", "en-US, en;q=0.5");
+        con.setRequestProperty("Content-Type", "application/json");
+
+        String json = "['Ingredients: Sugar']";
+
+        con.setDoOutput(true);
+        DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+        wr.writeBytes(json.toString());
+        wr.flush();
+        wr.close();
+
+        int responseCode = con.getResponseCode();
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+        String inputLine;
+        StringBuffer response = new StringBuffer();
+
+        while ((inputLine = in.readLine()) != null){
+            response.append(inputLine);
+        }
+        in.close();
+
+        Log.d("myApp", response.toString());
     }
 }
+
+
