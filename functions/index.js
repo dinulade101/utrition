@@ -5,28 +5,34 @@ app.use(require('cors')({origin: true}));
 const analyser = require('./analyser');
 
 
-re_ingredient_list = /INGREDIENTS:((?:[\s\w-]+[,.])*)/ig
-re_list = /\s*(\w[\s\w-]*)[,.]/ig
+const re_ingredient_list = /INGREDIENTS:((?:[\s\w-()]*,)*(?:[\s\w-()]*\.))/i;
+const re_list = /\s*(\w[\s\w-]*\w)(?:\s*\([\s\w-]*\))*[,.]/ig;
 
-app.post('/preproc', (req, response) => {
+app.post('/preproc', (req, response, next) => {
     // parse the ingredient list
-    console.log(req.body)
+    //console.log(req.body)
     if (!req.body || !req.body[0]) {
-        throw 'missing input list'
+        throw 'missing input list';
     }
     let raw = Object.keys(req.body).map(k => req.body[k]);
-    let str = re_ingredient_list.exec(raw.join(' '))[1];
+    //console.log(raw);
+    //console.log(raw.join(' '));
+    let str = re_ingredient_list.exec(raw.join(' '));
+    //console.log(str)
     if (!str) {
-        throw 'error while parsing input list'
+        throw 'error while parsing input list';
     }
+    let m = str[1];
     let list = [];
     let match;
-    while (match = re_list.exec(str)) {
+    while (match = re_list.exec(m)) {
         if (!match[1]) {
-            throw 'error while parsing input list'
+            throw 'error while parsing input list';
         }
         list.push(match[1]);
     }
+
+    //console.log(list);
 
     // analyse each ingredient
     analyser(list).then(res => {
@@ -41,7 +47,7 @@ app.post('/preproc', (req, response) => {
     });
 });
 
-app.post('/analyse', (req, response) => {
+app.post('/analyse', (req, response, next) => {
     if (!req.body.ingredients) {
         throw 'missing ingredients list'
     }

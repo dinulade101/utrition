@@ -60,7 +60,7 @@ function crawl (ingredient) {
 		}).join(' ');
  	}).catch((err) => {
         if (err) {
-            return;
+            return err;
         }
     });
 
@@ -89,7 +89,7 @@ module.exports = function (ingredients) {
         return res.filter(r => !!r);
     });
     scores = descriptions.then(desc => {
-        return score(desc.map(d => d.description).join());
+        return score(desc.map(d => d.description).join('\n\n'));
     });
     return Promise.all([descriptions, scores]).then(([desc, scores]) => {
         return {
