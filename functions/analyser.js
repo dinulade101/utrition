@@ -95,12 +95,13 @@ module.exports = function (ingredients) {
         return {
             ingredients: ingredients.map((ingredient, i) => {
                 let txt = desc[i].extract || desc[i].description || " ";
+                let s = scores[0].sentences[i] || {sentiment: " "};
                 console.log(txt);
                 return {
                     name: ingredient,
                     description: txt.split(" ").slice(0,20).join(" ") + "...",
                     url: desc[i].url,
-                    sentiment: scores[0].sentences[i].sentiment
+                    sentiment: s.sentiment
                 };
             }),
             sentiment: scores[0].documentSentiment
