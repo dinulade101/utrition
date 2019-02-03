@@ -99,7 +99,7 @@ module.exports = function (ingredients) {
                 console.log(txt);
                 return {
                     name: ingredient,
-                    description: txt.split(" ").slice(0,20).join(" ") + "...",
+                    description: txt.split(" ").slice(0,50).join(" ") + "...",
                     url: desc[i].url,
                     sentiment: s.sentiment
                 };
