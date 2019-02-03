@@ -60,7 +60,7 @@ function crawl (ingredient) {
 		}).join(' ');
  	}).catch((err) => {
         if (err) {
-            return err;
+            return;
         }
     });
 
@@ -94,7 +94,8 @@ module.exports = function (ingredients) {
     return Promise.all([descriptions, scores]).then(([desc, scores]) => {
         return {
             ingredients: ingredients.map((ingredient, i) => {
-                let txt = desc[i].extract || desc[i].description;
+                let txt = desc[i].extract || desc[i].description || " ";
+                console.log(txt);
                 return {
                     name: ingredient,
                     description: txt.split(" ").slice(0,20).join(" ") + "...",
