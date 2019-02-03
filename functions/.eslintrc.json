@@ -8,6 +8,8 @@
   ],
   "extends": "eslint:recommended",
   "rules": {
+    "no-useless-escape": "off",
+
     "no-cond-assign": "off",
 
     // Removed rule "disallow the use of console" from recommended eslint rules
