@@ -22,27 +22,34 @@ const re = (function() {
 
 
 function crawl (ingredient) {
-    return rp({
+    let page = rp({
         uri: 'https://en.wikipedia.org/w/api.php',
         json: true,
         qs: {
             action: 'query',
             format: 'json',
-            prop: 'info',
+            prop: 'info|extracts',
             inprop: 'url',
-            titles: ingredient,
+            exintro: 1,
+            explaintext: 1,
+            titles: ingredient.toLowerCase(),
         },
     }).then(res => {
-        console.log(res);
+        //console.log(res);
         var page = res.query.pages[Object.keys(res.query.pages)[0]];
         if (!page) {
             throw 'wiki page not found';
         }
-        console.log(page);
-        return page.fullurl;
-    }).then(url => {
+        //console.log(page);
+        return {
+            url: page.fullurl,
+            extract: page.extract
+        };
+    });
+
+    let desc = page.then(page => {
         return rp({
-            uri: url,
+            uri: page.url,
             transform: function (body) {
                 return cheerio.load(body);
             }
@@ -52,8 +59,19 @@ function crawl (ingredient) {
 			return re.test(f);
 		}).join(' ');
  	}).catch((err) => {
-        return err;
-  	});
+        if (err) {
+            return;
+        }
+    });
+
+    return Promise.all([page, desc]).then(([page, desc]) => {
+        return {
+            url: page.url,
+            description: desc,
+            extract: page.extract
+        };
+    });
+
 }
 
 function score (summary) {
@@ -67,16 +85,19 @@ function score (summary) {
 }
 
 module.exports = function (ingredients) {
-    descriptions =  Promise.all(ingredients.map(crawl))
+    descriptions =  Promise.all(ingredients.map(crawl)).then(res => {
+        return res.filter(r => !!r);
+    });
     scores = descriptions.then(desc => {
-        return score(desc.join());
+        return score(desc.map(d => d.description).join());
     });
     return Promise.all([descriptions, scores]).then(([desc, scores]) => {
         return {
             ingredients: ingredients.map((ingredient, i) => {
                 return {
                     name: ingredient,
-                    description: desc[i],
+                    description: desc[i].extract,
+                    url: desc[i].url,
                     sentiment: scores[0].sentences[i].sentiment
                 };
             }),
