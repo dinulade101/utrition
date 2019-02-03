@@ -88,23 +88,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
 
         Button btnCamera = (Button)findViewById(R.id.btnCamera);
         imageView = (ImageView)findViewById(R.id.imageView);
         textView = (TextView)findViewById(R.id.text_view_large);
         textViewBottom = (TextView)findViewById(R.id.text_view_large);
         textViewBottom.setMovementMethod(new ScrollingMovementMethod());
+
+        imageView.setImageResource(R.drawable.logo);
 
         if(okHttpClient == null)
         {
@@ -344,6 +336,12 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 try {
                     parseJSON(HttpPost("https://us-central1-utrition.cloudfunctions.net/api/preproc"));
+                    runOnUiThread(new Runnable(){
+                        @Override
+                        public void run(){
+                            textViewBottom.setText(resultText);
+                        }
+                    });
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (JSONException e) {
@@ -354,7 +352,6 @@ public class MainActivity extends AppCompatActivity {
 
         thread.start();
 
-        textViewBottom.setText(resultText);
 
     }
 
