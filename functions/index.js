@@ -4,9 +4,9 @@ const app = require('express')();
 app.use(require('cors')({origin: true}));
 const analyser = require('./analyser');
 
-app.post('*', (req, response) => {
+app.post('/analyse', (req, response) => {
     if (!req.body.ingredients) {
-        throw new Error('Empty ingredients list')
+        throw 'ingredients list'
     }
     analyser(req.body.ingredients).then(res => {
         console.log(res);
@@ -20,4 +20,4 @@ app.post('*', (req, response) => {
     });
 });
 
-exports.analyse = functions.https.onRequest(app);
+exports.api = functions.https.onRequest(app);

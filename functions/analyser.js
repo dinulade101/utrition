@@ -4,13 +4,6 @@ const client = new language.LanguageServiceClient();
 const rp = require('request-promise');
 const cheerio = require('cheerio');
 
-var options = {
-    uri: `https://en.wikipedia.org/wiki/Disodium_guanylate`,
-    transform: function (body) {
-        return cheerio.load(body);
-    }
-};
-
 const re = (function() {
     var components = [],
         arg;
@@ -29,7 +22,32 @@ const re = (function() {
 
 
 function crawl (ingredient) {
-    return rp(options).then(($) => {
+    return rp({
+        uri: 'https://en.wikipedia.org/w/api.php',
+        json: true,
+        qs: {
+            action: 'query',
+            format: 'json',
+            prop: 'info',
+            inprop: 'url',
+            titles: ingredient,
+        },
+    }).then(res => {
+        console.log(res);
+        var page = res.query.pages[Object.keys(res.query.pages)[0]];
+        if (!page) {
+            throw 'wiki page not found';
+        }
+        console.log(page);
+        return page.fullurl;
+    }).then(url => {
+        return rp({
+            uri: url,
+            transform: function (body) {
+                return cheerio.load(body);
+            }
+        });
+    }).then(($) => {
 	    return $('p').text().split('\n').filter(f => {
 			return re.test(f);
 		}).join(' ');
