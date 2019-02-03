@@ -4,14 +4,28 @@ const app = require('express')();
 app.use(require('cors')({origin: true}));
 const analyser = require('./analyser');
 
-app.get('/ping', (req, response) => {
+app.get('/ping', (req, response, next) => {
     analyser(['ping']).then(res => {
         response.send(res);
         return;
     }).catch(err => {
         if (err) {
-            console.log('ERROR', err);
-            response.send(err);
+            return next(err);
+        }
+    });
+});
+
+app.post('/analyse', (req, response) => {
+    if (!req.body.ingredients) {
+        throw new Error('Empty ingredients list')
+    }
+    analyser(req.body.ingredients).then(res => {
+        console.log(res);
+        response.send(res);
+        return;
+    }).catch(err => {
+        if (err) {
+            return next(err);
         }
     });
 });
