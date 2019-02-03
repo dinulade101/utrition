@@ -94,9 +94,10 @@ module.exports = function (ingredients) {
     return Promise.all([descriptions, scores]).then(([desc, scores]) => {
         return {
             ingredients: ingredients.map((ingredient, i) => {
+                let txt = desc[i].extract || desc[i].description;
                 return {
                     name: ingredient,
-                    description: desc[i].extract,
+                    description: txt.split(" ").slice(0,20).join(" ") + "...",
                     url: desc[i].url,
                     sentiment: scores[0].sentences[i].sentiment
                 };
