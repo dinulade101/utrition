@@ -3,15 +3,15 @@ const client = new language.LanguageServiceClient();
 
 const rp = require('request-promise');
 const cheerio = require('cheerio');
-const kw = require('./keywords')
-const options = {
-  uri: `https://en.wikipedia.org/wiki/Disodium_guanylate`,
-  transform: function (body) {
-    return cheerio.load(body);
-  }
+
+var options = {
+    uri: `https://en.wikipedia.org/wiki/Disodium_guanylate`,
+    transform: function (body) {
+        return cheerio.load(body);
+    }
 };
 
-function any() {
+const re = (function() {
     var components = [],
         arg;
 
@@ -25,13 +25,11 @@ function any() {
     var combined = new RegExp("(?:" + components.join(")|(?:") + ")");
     combined._components = components; // For chained calls to "or" method
     return combined;
-};
-
-re = any(...kw);
+})(...require('./keywords'));
 
 
 function crawl (ingredient) {
-    rp(options).then(($) => {
+    return rp(options).then(($) => {
 	    return $('p').text().split('\n').filter(f => {
 			return re.test(f);
 		}).join(' ');
