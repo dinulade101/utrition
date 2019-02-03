@@ -8,6 +8,8 @@
   ],
   "extends": "eslint:recommended",
   "rules": {
+    "no-cond-assign": "off",
+
     // Removed rule "disallow the use of console" from recommended eslint rules
     "no-console": "off",
 
@@ -63,7 +65,7 @@
     "no-floating-decimal": 2,
 
     // Warn against shorthand type conversions
-    "no-implicit-coercion": 1,
+    "no-implicit-coercion": "off",
 
     // Warn against function declarations and expressions inside loop statements
     "no-loop-func": 1,
