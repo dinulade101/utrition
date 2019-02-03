@@ -10,7 +10,8 @@ app.get('/ping', (req, response, next) => {
         return;
     }).catch(err => {
         if (err) {
-            return next(err);
+            next(err);
+            return;
         }
     });
 });
@@ -25,7 +26,8 @@ app.post('/analyse', (req, response) => {
         return;
     }).catch(err => {
         if (err) {
-            return next(err);
+            next(err);
+            return;
         }
     });
 });
