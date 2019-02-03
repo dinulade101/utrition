@@ -1,7 +1,7 @@
 module.exports = [
     /safe/,
     /health/,
-    /consumption/,
-    /food/,
-    /flavor/
+    ///consumption/,
+    ///food/,
+    ///flavor/
 ]

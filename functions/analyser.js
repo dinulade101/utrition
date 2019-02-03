@@ -89,16 +89,19 @@ module.exports = function (ingredients) {
         return res.filter(r => !!r);
     });
     scores = descriptions.then(desc => {
-        return score(desc.map(d => d.description).join());
+        return score(desc.map(d => d.description).join('\n\n'));
     });
     return Promise.all([descriptions, scores]).then(([desc, scores]) => {
         return {
             ingredients: ingredients.map((ingredient, i) => {
+                let txt = desc[i].extract || desc[i].description || " ";
+                let s = scores[0].sentences[i] || {sentiment: " "};
+                console.log(txt);
                 return {
                     name: ingredient,
-                    description: desc[i].extract,
+                    description: txt.split(" ").slice(0,50).join(" ") + "...",
                     url: desc[i].url,
-                    sentiment: scores[0].sentences[i].sentiment
+                    sentiment: s.sentiment
                 };
             }),
             sentiment: scores[0].documentSentiment
