@@ -4,8 +4,32 @@ const app = require('express')();
 app.use(require('cors')({origin: true}));
 const analyser = require('./analyser');
 
-app.get('/ping', (req, res) => {
-    res.send(analyser(['ping']));
+app.get('/ping', (req, response, next) => {
+    analyser(['ping']).then(res => {
+        response.send(res);
+        return;
+    }).catch(err => {
+        if (err) {
+            next(err);
+            return;
+        }
+    });
+});
+
+app.post('/analyse', (req, response) => {
+    if (!req.body.ingredients) {
+        throw new Error('Empty ingredients list')
+    }
+    analyser(req.body.ingredients).then(res => {
+        console.log(res);
+        response.send(res);
+        return;
+    }).catch(err => {
+        if (err) {
+            next(err);
+            return;
+        }
+    });
 });
 
 // // Create and Deploy Your First Cloud Functions

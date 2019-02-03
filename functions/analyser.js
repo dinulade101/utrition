@@ -1,8 +1,43 @@
 const language = require('@google-cloud/language');
 const client = new language.LanguageServiceClient();
 
+const rp = require('request-promise');
+const cheerio = require('cheerio');
+const kw = require('./keywords')
+const options = {
+  uri: `https://en.wikipedia.org/wiki/Disodium_guanylate`,
+  transform: function (body) {
+    return cheerio.load(body);
+  }
+};
+
+function any() {
+    var components = [],
+        arg;
+
+    for (var i = 0; i < arguments.length; i++) {
+        arg = arguments[i];
+        if (arg instanceof RegExp) {
+            components = components.concat(arg._components || arg.source);
+        }
+    }
+
+    var combined = new RegExp("(?:" + components.join(")|(?:") + ")");
+    combined._components = components; // For chained calls to "or" method
+    return combined;
+};
+
+re = any(...kw);
+
+
 function crawl (ingredient) {
-    return 'chemical health concern summary';
+    rp(options).then(($) => {
+	    return $('p').text().split('\n').filter(f => {
+			return re.test(f);
+		}).join(' ');
+ 	}).catch((err) => {
+        return err;
+  	});
 }
 
 function score (summary) {
@@ -16,7 +51,20 @@ function score (summary) {
 }
 
 module.exports = function (ingredients) {
-    return Promise.all(ingredients.map(crawl)).then(res => {
-        return score(res.join());
+    descriptions =  Promise.all(ingredients.map(crawl))
+    scores = descriptions.then(desc => {
+        return score(desc.join());
+    });
+    return Promise.all([descriptions, scores]).then(([desc, scores]) => {
+        return {
+            ingredients: ingredients.map((ingredient, i) => {
+                return {
+                    name: ingredient,
+                    description: desc[i],
+                    sentiment: scores[0].sentences[i].sentiment
+                };
+            }),
+            sentiment: scores[0].documentSentiment
+        };
     });
 }
